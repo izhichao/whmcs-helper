@@ -16,13 +16,13 @@
 - 搬瓦工
 - 不完美支持其余 WHMCS 主题商家（可以通知补货，但不能获取商品信息）
 
-> 暂不支持套了 CF 5 秒盾的商家（如 RackNerd 等）
+> 暂不支持套了 CF 5 秒盾的商家
 
 ### 效果展示
 
-![监控日志](https://minio.zhichao.org/images/whmcs-helper1.webp)
+![监控日志](https://s3.zhichao.org/images/whmcs-helper1.webp)
 
-![通知](https://minio.zhichao.org/images/whmcs-helper2.webp)
+![通知](https://s3.zhichao.org/images/whmcs-helper2.webp)
 
 ### 原理
 
@@ -35,7 +35,7 @@
 - 脚本会收集运行次数、统计监控的链接（商家）
 - 脚本补货通知时，部分商家下单链接会含 AFF
 - 脚本目前为压缩后的代码，后续完善功能后再发未压缩代码
-- **脚本处于开发阶段，可能存在大量 BUG，有问题请提 Issues**
+- **脚本处于开发阶段，可能存在大量 BUG**
 
 ## 极速下单助手
 
