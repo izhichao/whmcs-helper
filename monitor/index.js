@@ -4,7 +4,7 @@
  * cron: @once
  * 环境变量
  * WHMCS_URLS 监控商品链接（包含 pid 的链接） 多个连接用英文分号（;）分割
- * WHMCS_INTERVAL 监控频率，单位毫秒，默认为一分钟一次（60000）
+ * WHMCS_INTERVAL 监控频率，单位秒，默认为一分钟一次（60）
  * WHMCS_LOGS 是否打印详细日志
  */
 
@@ -15,7 +15,7 @@ const version = '1.0.0';
 const { sendNotify } = require('./sendNotify.js');
 
 const WHMCS_URLS = process.env.WHMCS_URLS || '';
-const WHMCS_INTERVAL = process.env.WHMCS_INTERVAL || 60000;
+const WHMCS_INTERVAL = process.env.WHMCS_INTERVAL || 60;
 const WHMCS_LOGS = process.env.WHMCS_LOGS || true;
 const WHMCS_API = process.env.WHMCS_API || 'https://vps.tsx.dpdns.org';
 const urls = WHMCS_URLS.split(';');
@@ -90,7 +90,7 @@ function main() {
     notifyStatus[url] = true;
     console.log(`[获取到 ${validUrls.length} 个地址] 开始监控第 ${index + 1} 个地址`);
     checkStock(url, index + 1);
-    setInterval(() => checkStock(url, index + 1), WHMCS_INTERVAL);
+    setInterval(() => checkStock(url, index + 1), WHMCS_INTERVAL * 1000);
   });
 
   client.fetch(`${WHMCS_API}/log`, {
