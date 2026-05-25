@@ -9,14 +9,11 @@
  */
 
 const { URL } = require('url');
-const axios = require('axios');
-const tough = require('tough-cookie');
-const { wrapper } = require('axios-cookiejar-support');
+const { Impit } = require('impit');
 const cheerio = require('cheerio');
 const version = '1.0.0';
 const { sendNotify } = require('./sendNotify.js');
 
-// WHMCS 商品页面 URL
 const WHMCS_URLS = process.env.WHMCS_URLS || '';
 const WHMCS_INTERVAL = process.env.WHMCS_INTERVAL || 60000;
 const WHMCS_LOGS = process.env.WHMCS_LOGS || true;
@@ -24,31 +21,54 @@ const WHMCS_API = process.env.WHMCS_API || 'https://vps.tsx.dpdns.org';
 const urls = WHMCS_URLS.split(';');
 
 const notifyStatus = {};
-// 创建一个 CookieJar 来存储 Cookie
-const jar = new tough.CookieJar();
-const client = wrapper(
-  axios.create({
-    jar
-  })
-);
+const client = new Impit({
+  browser: 'chrome',
+  ignoreTlsErrors: false,
+});
 
-const instance = axios.create({ baseURL: WHMCS_API });
+const OUT_OF_STOCK_KEYWORDS = [
+  'Out of Stock',
+  '缺貨中',
+  '缺货中',
+  '在庫切れ',
+  '품절',
+  'Agotado',
+  'Rupture de stock',
+  'Ausverkauft',
+  'Esgotado',
+  'Нет в наличии',
+  'نفذ من المخزون',
+  'Stok Habis',
+  'Hết hàng',
+  'หมดสต็อก',
+  'Tükendi',
+  'Stokta Yok',
+  'Brak w magazynie',
+  'Uitverkocht',
+  'Slut i lager',
+  'Slutsåld',
+  'Udsolgt',
+  'Loppuunmyyty',
+  'Išparduota',
+  'Izpirkts',
+  'Otsas',
+];
 
 console.log('当前版本: ' + version);
 console.log('VPS 补货通知: https://t.me/vps_restock');
 console.log('脚本最新动态: https://t.me/whmcs_helper\n');
 
-// 执行
-instance
-  .get('/version')
-  .then((res) => {
-    if (res.data.version === version) {
-      if (res.data.changelog !== '-') {
-        console.log('更新日志: ' + res.data.changelog + '\n');
+client
+  .fetch(`${WHMCS_API}/version`)
+  .then((res) => res.json())
+  .then((data) => {
+    if (data.version === version) {
+      if (data.changelog !== '-') {
+        console.log('更新日志: ' + data.changelog + '\n');
       }
       main();
     } else {
-      console.log('最新版本: ' + res.data.version);
+      console.log('最新版本: ' + data.version);
       console.log('脚本已更新，请重新拉取脚本！');
     }
   })
@@ -68,41 +88,46 @@ function main() {
 
   validUrls.forEach((url, index) => {
     notifyStatus[url] = true;
-
     console.log(`[获取到 ${validUrls.length} 个地址] 开始监控第 ${index + 1} 个地址`);
-
     checkStock(url, index + 1);
     setInterval(() => checkStock(url, index + 1), WHMCS_INTERVAL);
   });
 
-  instance.post('/log', { urls: validUrls });
+  client.fetch(`${WHMCS_API}/log`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ urls: validUrls }),
+  });
 }
 
-// 检查库存状态的函数
 async function checkStock(url, index) {
   try {
-    const urlObj = new URL(url);
-    const cookies = await jar.getCookies(`${urlObj.protocol}//${urlObj.host}`);
+    const response = await client.fetch(url, { redirect: 'manual' });
+    const statusCode = response.status;
+    const cookies = response.headers.get('set-cookie') || '';
+    const location = response.headers.get('location');
 
-    // 没有存储的 Cookie，发送初始请求以获取 Set-Cookie 响应头
-    if (cookies.length === 0) {
-      await client.get(url);
+    let html;
+
+    if (statusCode >= 300 && statusCode < 400 && location) {
+      const redirectUrl = new URL(location, url).toString();
+      const redirectResponse = await client.fetch(redirectUrl, {
+        headers: { Cookie: cookies },
+      });
+      html = await redirectResponse.text();
+    } else {
+      html = await response.text();
     }
 
-    // 发送后续请求，自动包含会话 Cookie
-    const { data: res } = await client.get(url);
-    const $ = cheerio.load(res);
+    const $ = cheerio.load(html);
+    const bodyText = $('body').text();
+    const isOutOfStock = OUT_OF_STOCK_KEYWORDS.some((keyword) => bodyText.includes(keyword));
 
-    const stockStatus = $('body').text().trim();
-    if (stockStatus.includes('缺貨中') || stockStatus.includes('Out of Stock')) {
-      if (WHMCS_LOGS) {
-        console.log(`${time()} 监控 ${index} 无货`);
-      }
+    if (isOutOfStock) {
+      if (WHMCS_LOGS) console.log(`${time()} 监控 ${index} 无货`);
       notifyStatus[url] = true;
     } else {
-      if (WHMCS_LOGS) {
-        console.log(`${time()} 监控 ${index} 有货`);
-      }
+      if (WHMCS_LOGS) console.log(`${time()} 监控 ${index} 有货`);
       if (notifyStatus[url]) {
         if (url.includes('bwh') || url.includes('bandwagon')) {
           sendNotify(...(await bwhTemplate($, url)));
@@ -123,7 +148,7 @@ async function checkStock(url, index) {
 }
 
 async function standardTemplate($, url) {
-  const name = $('title').text().split('-')[1].trim();
+  const name = $('title').text().split('-')[1]?.trim() || '';
   const title = $('.product-info .product-title').text();
   const detail = $('.product-info p').eq(1).text();
   const billingArr = [];
@@ -171,18 +196,19 @@ async function dmitTemplate($, url) {
   return [name + ' 补货通知', await notifyTemplate(title, url, billing, detail)];
 }
 
-// 通知模板
 async function notifyTemplate(title, url, billing, detail) {
   const pid = new URLSearchParams(url).get('pid');
   let link = url;
 
   try {
-    const { data: res } = await instance.get('/id', { params: { url } });
+    const apiUrl = new URL('/id', WHMCS_API);
+    apiUrl.searchParams.set('url', url);
+    const response = await client.fetch(apiUrl.toString());
+    const res = await response.json();
     const { protocol, host } = new URL(url);
-    let path = '';
 
     if (res.id && pid) {
-      link = `${protocol}//${host}${path}/aff.php?aff=${res.id}&pid=${pid}`;
+      link = `${protocol}//${host}/aff.php?aff=${res.id}&pid=${pid}`;
     }
   } catch {}
 
