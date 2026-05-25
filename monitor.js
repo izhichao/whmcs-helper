@@ -109,6 +109,7 @@ async function checkStock(url, index) {
     const location = response.headers.get('location');
 
     let html;
+    let finalUrl = url;
 
     if (statusCode >= 300 && statusCode < 400 && location) {
       const redirectUrl = new URL(location, url).toString();
@@ -116,18 +117,18 @@ async function checkStock(url, index) {
         headers: { Cookie: cookies },
       });
       html = await redirectResponse.text();
+      finalUrl = redirectResponse.url || redirectUrl;
     } else {
       html = await response.text();
+      finalUrl = response.url || url;
     }
 
     const $ = cheerio.load(html);
     const bodyText = $('body').text();
     const isOutOfStock = OUT_OF_STOCK_KEYWORDS.some((keyword) => bodyText.includes(keyword));
+    const isConfPage = finalUrl.includes('a=confproduct') || finalUrl.includes('a=view');
 
-    if (isOutOfStock) {
-      if (WHMCS_LOGS) console.log(`${time()} 监控 ${index} 无货`);
-      notifyStatus[url] = true;
-    } else {
+    if (isConfPage) {
       if (WHMCS_LOGS) console.log(`${time()} 监控 ${index} 有货`);
       if (notifyStatus[url]) {
         if (url.includes('bwh') || url.includes('bandwagon')) {
@@ -142,6 +143,11 @@ async function checkStock(url, index) {
         }
         notifyStatus[url] = false;
       }
+    } else if (isOutOfStock) {
+      if (WHMCS_LOGS) console.log(`${time()} 监控 ${index} 无货`);
+      notifyStatus[url] = true;
+    } else {
+      if (WHMCS_LOGS) console.log(`${time()} 监控 ${index} 未上架`);
     }
   } catch (error) {
     console.error('检查库存时出错:', error);
