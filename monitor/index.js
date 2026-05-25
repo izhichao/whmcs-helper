@@ -55,11 +55,11 @@ const OUT_OF_STOCK_KEYWORDS = [
 ];
 
 console.log('当前版本: ' + version);
-console.log('VPS 补货通知: https://t.me/vps_restock');
+console.log('VPS 补货通知: https://t.me/stock_vps');
 console.log('脚本最新动态: https://t.me/whmcs_helper\n');
 
 client
-  .fetch(`${WHMCS_API}/version`)
+  .fetch(`${WHMCS_API}/api/script/version`)
   .then((res) => res.json())
   .then((data) => {
     if (data.version === version) {
@@ -73,7 +73,8 @@ client
     }
   })
   .catch(() => {
-    console.log('获取版本失败，请重新拉取脚本！');
+    console.log('获取版本失败，将继续运行本地脚本...\n');
+    main();
   });
 
 function main() {
@@ -93,11 +94,11 @@ function main() {
     setInterval(() => checkStock(url, index + 1), WHMCS_INTERVAL * 1000);
   });
 
-  client.fetch(`${WHMCS_API}/log`, {
+  client.fetch(`${WHMCS_API}/api/script/logs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ urls: validUrls }),
-  });
+  }).catch(() => {});
 }
 
 async function checkStock(url, index) {
@@ -197,18 +198,18 @@ async function dmitTemplate($, url) {
 }
 
 async function notifyTemplate(title, url, billing, detail) {
-  const pid = new URLSearchParams(url).get('pid');
   let link = url;
 
   try {
-    const apiUrl = new URL('/id', WHMCS_API);
-    apiUrl.searchParams.set('url', url);
-    const response = await client.fetch(apiUrl.toString());
+    const response = await client.fetch(`${WHMCS_API}/api/script/url`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
     const res = await response.json();
-    const { protocol, host } = new URL(url);
 
-    if (res.id && pid) {
-      link = `${protocol}//${host}/aff.php?aff=${res.id}&pid=${pid}`;
+    if (res.url && res.url.product) {
+      link = res.url.product;
     }
   } catch {}
 
