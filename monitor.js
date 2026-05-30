@@ -105,22 +105,40 @@ async function checkStock(url, index) {
   try {
     const response = await client.fetch(url, { redirect: 'manual' });
     const statusCode = response.status;
-    const cookies = response.headers.get('set-cookie') || '';
+    let cookies = response.headers.get('set-cookie') || '';
     const location = response.headers.get('location');
 
     let html;
     let finalUrl = url;
+    let redirectUrl = '';
 
     if (statusCode >= 300 && statusCode < 400 && location) {
-      const redirectUrl = new URL(location, url).toString();
+      // 第一次重定向
+      redirectUrl = new URL(location, url).toString();
+      
       const redirectResponse = await client.fetch(redirectUrl, {
         headers: { Cookie: cookies },
       });
+      const redirectCookies = redirectResponse.headers.get('set-cookie');
+      if (redirectCookies) {
+        cookies = redirectCookies;
+      }
       html = await redirectResponse.text();
+      // 第二次重定向
       finalUrl = redirectResponse.url || redirectUrl;
     } else {
       html = await response.text();
       finalUrl = response.url || url;
+    }
+
+    if (finalUrl.includes('a=view') && redirectUrl) {
+      // 检测到 a=view，尝试重新请求配置页面
+      const confResponse = await client.fetch(redirectUrl, {
+        headers: { Cookie: cookies },
+      });
+      html = await confResponse.text();
+      // 重新请求配置页面后的 URL
+      finalUrl = confResponse.url || redirectUrl;
     }
 
     const $ = cheerio.load(html);
