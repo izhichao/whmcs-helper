@@ -17,7 +17,7 @@ const { sendNotify } = require('./sendNotify.js');
 const WHMCS_URLS = process.env.WHMCS_URLS || '';
 const WHMCS_INTERVAL = process.env.WHMCS_INTERVAL || 60;
 const WHMCS_LOGS = process.env.WHMCS_LOGS || true;
-const WHMCS_API = process.env.WHMCS_API || 'https://vps.tsx.dpdns.org';
+const WHMCS_API = 'https://vps.tsx.dpdns.org';
 const urls = WHMCS_URLS.split(';');
 
 const notifyStatus = {};

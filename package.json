@@ -1,0 +1,29 @@
+{
+  "name": "whmcs-helper",
+  "version": "1.0.0",
+  "description": "基于 Node.js 的 WHMCS VPS 库存监控助手，支持自定义监控频率及多种推送渠道",
+  "main": "monitor.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/izhichao/whmcs-helper.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/izhichao/whmcs-helper/issues"
+  },
+  "homepage": "https://github.com/izhichao/whmcs-helper#readme",
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "dotenv": "^17.4.2",
+    "impit": "^0.14.1",
+    "nodemailer": "^8.0.10",
+    "undici": "^8.3.0"
+  }
+}
