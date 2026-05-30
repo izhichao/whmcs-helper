@@ -18,12 +18,19 @@ const WHMCS_URLS = process.env.WHMCS_URLS || '';
 const WHMCS_INTERVAL = process.env.WHMCS_INTERVAL || 60;
 const WHMCS_LOGS = process.env.WHMCS_LOGS || true;
 const WHMCS_API = 'https://vps.tsx.dpdns.org';
+const WHMCS_PROXY = process.env.WHMCS_PROXY || '';
 const urls = WHMCS_URLS.split(';');
+
+let proxyUrl = WHMCS_PROXY;
+if (proxyUrl && !proxyUrl.includes('://')) {
+  proxyUrl = `http://${proxyUrl}`;
+}
 
 const notifyStatus = {};
 const client = new Impit({
   browser: 'chrome',
   ignoreTlsErrors: false,
+  ...(proxyUrl ? { proxyUrl } : {}),
 });
 
 const OUT_OF_STOCK_KEYWORDS = [
