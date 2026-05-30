@@ -62,8 +62,8 @@ const OUT_OF_STOCK_KEYWORDS = [
 ];
 
 console.log('当前版本: ' + version);
-console.log('VPS 补货通知: https://t.me/stock_vps');
-console.log('脚本最新动态: https://t.me/whmcs_helper\n');
+console.log('VPS 补货通知: https://t.me/vps_restock');
+console.log('脚本最新动态: https://t.me/stock_vps\n');
 
 client
   .fetch(`${WHMCS_API}/api/script/version`)

@@ -1,24 +1,25 @@
 {
-  "name": "whmcs-helper",
+  "name": "stockvps-monitor",
   "version": "1.0.0",
-  "description": "基于 Node.js 的 WHMCS VPS 库存监控助手，支持自定义监控频率及多种推送渠道",
+  "description": "基于 Node.js 的 VPS 库存监控助手，支持自定义监控频率及多种推送渠道",
   "main": "monitor.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "pm2 start index.js --name stockvps-monitor",
+    "dev": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/izhichao/whmcs-helper.git"
+    "url": "git+https://github.com/izhichao/stockvps-monitor.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/izhichao/whmcs-helper/issues"
+    "url": "https://github.com/izhichao/stockvps-monitor/issues"
   },
-  "homepage": "https://github.com/izhichao/whmcs-helper#readme",
+  "homepage": "https://github.com/izhichao/stockvps-monitor#readme",
   "dependencies": {
     "cheerio": "^1.2.0",
     "dotenv": "^17.4.2",
