@@ -117,13 +117,12 @@ async function checkStock(url, index) {
 
     let html;
     let finalUrl = url;
-    let redirectUrl = '';
 
     if (statusCode >= 300 && statusCode < 400 && location) {
       // 第一次重定向
-      redirectUrl = new URL(location, url).toString();
+      const targetLocation = new URL(location, url).toString();
       
-      const redirectResponse = await client.fetch(redirectUrl, {
+      const redirectResponse = await client.fetch(targetLocation, {
         headers: { Cookie: cookies },
       });
       const redirectCookies = redirectResponse.headers.get('set-cookie');
@@ -132,14 +131,18 @@ async function checkStock(url, index) {
       }
       html = await redirectResponse.text();
       // 第二次重定向
-      finalUrl = redirectResponse.url || redirectUrl;
+      finalUrl = redirectResponse.url || targetLocation;
     } else {
       html = await response.text();
       finalUrl = response.url || url;
     }
 
-    if (finalUrl.includes('a=view') && redirectUrl) {
+    if (finalUrl.includes('a=view')) {
       // 检测到 a=view，尝试重新请求配置页面
+      const confUrlObj = new URL(url);
+      confUrlObj.search = '?a=confproduct&i=0';
+      const redirectUrl = confUrlObj.toString();
+
       const confResponse = await client.fetch(redirectUrl, {
         headers: { Cookie: cookies },
       });
