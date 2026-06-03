@@ -111,7 +111,7 @@ function main() {
 async function checkStock(url, index) {
   try {
     const response = await client.fetch(url, { redirect: 'manual' });
-    const statusCode = response.status;
+    let statusCode = response.status;
     let cookies = response.headers.get('set-cookie') || '';
     const location = response.headers.get('location');
 
@@ -125,6 +125,7 @@ async function checkStock(url, index) {
       const redirectResponse = await client.fetch(targetLocation, {
         headers: { Cookie: cookies },
       });
+      statusCode = redirectResponse.status;
       const redirectCookies = redirectResponse.headers.get('set-cookie');
       if (redirectCookies) {
         cookies = redirectCookies;
@@ -134,10 +135,10 @@ async function checkStock(url, index) {
       finalUrl = redirectResponse.url || targetLocation;
     } else {
       html = await response.text();
-      finalUrl = response.url || url;
+      finalUrl = response.url || url;      
     }
 
-    if (finalUrl.includes('a=view')) {
+    if (finalUrl.includes('a=view') && statusCode < 400) {
       // 检测到 a=view，尝试重新请求配置页面
       const confUrlObj = new URL(url);
       confUrlObj.search = '?a=confproduct&i=0';
@@ -146,9 +147,15 @@ async function checkStock(url, index) {
       const confResponse = await client.fetch(redirectUrl, {
         headers: { Cookie: cookies },
       });
+      statusCode = confResponse.status;
       html = await confResponse.text();
       // 重新请求配置页面后的 URL
       finalUrl = confResponse.url || redirectUrl;
+    }
+
+    if (statusCode >= 400) {
+      if (WHMCS_LOGS) console.log(`${time()} 监控 ${index} 请求失败，状态码: ${statusCode}`);
+      return;
     }
 
     const $ = cheerio.load(html);
