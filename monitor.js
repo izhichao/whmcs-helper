@@ -19,6 +19,7 @@ const WHMCS_INTERVAL = process.env.WHMCS_INTERVAL || 60;
 const WHMCS_LOGS = process.env.WHMCS_LOGS || true;
 const WHMCS_API = 'https://vps.tsx.dpdns.org';
 const WHMCS_PROXY = process.env.WHMCS_PROXY || '';
+const FLARESOLVERR_URL = process.env.FLARESOLVERR_URL || '';
 const urls = WHMCS_URLS.split(';');
 
 let proxyUrl = WHMCS_PROXY;
@@ -108,34 +109,76 @@ function main() {
   }).catch(() => {});
 }
 
+async function fetchViaFlareSolverr(targetUrl, cookies = []) {
+  const requestBody = {
+    cmd: 'request.get',
+    url: targetUrl,
+    cookies: cookies,
+    maxTimeout: 60000,
+  };
+  
+  if (proxyUrl) {
+    requestBody.proxy = { url: proxyUrl };
+  }
+
+  const response = await fetch(FLARESOLVERR_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestBody),
+    signal: AbortSignal.timeout(90000),
+  });
+  const data = await response.json();
+  if (data.status !== 'ok') {
+    throw new Error(data.message || 'FlareSolverr failed');
+  }
+  return {
+    html: data.solution.response,
+    finalUrl: data.solution.url,
+    statusCode: data.solution.status,
+    cookies: data.solution.cookies,
+  };
+}
+
 async function checkStock(url, index) {
   try {
-    const response = await client.fetch(url, { redirect: 'manual' });
-    let statusCode = response.status;
-    let cookies = response.headers.get('set-cookie') || '';
-    const location = response.headers.get('location');
-
     let html;
     let finalUrl = url;
+    let statusCode;
+    let cookies;
 
-    if (statusCode >= 300 && statusCode < 400 && location) {
-      // 第一次重定向
-      const targetLocation = new URL(location, url).toString();
-      
-      const redirectResponse = await client.fetch(targetLocation, {
-        headers: { Cookie: cookies },
-      });
-      statusCode = redirectResponse.status;
-      const redirectCookies = redirectResponse.headers.get('set-cookie');
-      if (redirectCookies) {
-        cookies = redirectCookies;
-      }
-      html = await redirectResponse.text();
-      // 第二次重定向
-      finalUrl = redirectResponse.url || targetLocation;
+    if (FLARESOLVERR_URL) {
+      if (WHMCS_LOGS) console.log(`${time()} 监控 ${index} 使用 FlareSolverr 请求中...`);
+      const result = await fetchViaFlareSolverr(url);
+      html = result.html;
+      finalUrl = result.finalUrl;
+      statusCode = result.statusCode;
+      cookies = result.cookies;
     } else {
-      html = await response.text();
-      finalUrl = response.url || url;      
+      const response = await client.fetch(url, { redirect: 'manual' });
+      statusCode = response.status;
+      let cookieStr = response.headers.get('set-cookie') || '';
+      const location = response.headers.get('location');
+
+      if (statusCode >= 300 && statusCode < 400 && location) {
+        // 第一次重定向
+        const targetLocation = new URL(location, url).toString();
+        
+        const redirectResponse = await client.fetch(targetLocation, {
+          headers: { Cookie: cookieStr },
+        });
+        statusCode = redirectResponse.status;
+        const redirectCookies = redirectResponse.headers.get('set-cookie');
+        if (redirectCookies) {
+          cookieStr = redirectCookies;
+        }
+        html = await redirectResponse.text();
+        // 第二次重定向
+        finalUrl = redirectResponse.url || targetLocation;
+      } else {
+        html = await response.text();
+        finalUrl = response.url || url;      
+      }
+      cookies = cookieStr;
     }
 
     if (finalUrl.includes('a=view') && statusCode < 400) {
@@ -144,13 +187,20 @@ async function checkStock(url, index) {
       confUrlObj.search = '?a=confproduct&i=0';
       const redirectUrl = confUrlObj.toString();
 
-      const confResponse = await client.fetch(redirectUrl, {
-        headers: { Cookie: cookies },
-      });
-      statusCode = confResponse.status;
-      html = await confResponse.text();
-      // 重新请求配置页面后的 URL
-      finalUrl = confResponse.url || redirectUrl;
+      if (FLARESOLVERR_URL) {
+        const result = await fetchViaFlareSolverr(redirectUrl, cookies);
+        html = result.html;
+        finalUrl = result.finalUrl;
+        statusCode = result.statusCode;
+      } else {
+        const confResponse = await client.fetch(redirectUrl, {
+          headers: { Cookie: cookies },
+        });
+        statusCode = confResponse.status;
+        html = await confResponse.text();
+        // 重新请求配置页面后的 URL
+        finalUrl = confResponse.url || redirectUrl;
+      }
     }
 
     if (statusCode >= 400) {
