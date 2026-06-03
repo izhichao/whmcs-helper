@@ -3,9 +3,9 @@
  * 定时规则
  * cron: @once
  * 环境变量
- * WHMCS_URLS 监控商品链接（包含 pid 的链接） 多个连接用英文分号（;）分割
- * WHMCS_INTERVAL 监控频率，单位秒，默认为一分钟一次（60）
- * WHMCS_LOGS 是否打印详细日志
+ * STOCKVPS_URLS 监控商品链接（包含 pid 的链接） 多个连接用英文分号（;）分割
+ * STOCKVPS_INTERVAL 监控频率，单位秒，默认为一分钟一次（60）
+ * STOCKVPS_LOGS 是否打印详细日志
  */
 
 const { URL } = require('url');
@@ -14,21 +14,21 @@ const cheerio = require('cheerio');
 const version = '1.0.0';
 const { sendNotify } = require('./sendNotify.js');
 
-const WHMCS_URLS = process.env.WHMCS_URLS || '';
-const WHMCS_INTERVAL = process.env.WHMCS_INTERVAL || 60;
-const WHMCS_LOGS = process.env.WHMCS_LOGS || true;
-const WHMCS_API = 'https://vps.tsx.dpdns.org';
-const WHMCS_PROXY = process.env.WHMCS_PROXY || '';
-const FLARESOLVERR_PROXY = process.env.FLARESOLVERR_PROXY || '';
-const FLARESOLVERR_URL = process.env.FLARESOLVERR_URL || '';
-const urls = WHMCS_URLS.split(';');
+const STOCKVPS_URLS = process.env.STOCKVPS_URLS || '';
+const STOCKVPS_INTERVAL = process.env.STOCKVPS_INTERVAL || 60;
+const STOCKVPS_LOGS = process.env.STOCKVPS_LOGS || true;
+const STOCKVPS_PROXY = process.env.STOCKVPS_PROXY || '';
+const STOCKVPS_FS_PROXY = process.env.STOCKVPS_FS_PROXY || '';
+const STOCKVPS_FS_URL = process.env.STOCKVPS_FS_URL || '';
+const STOCKVPS_API = 'https://vps.tsx.dpdns.org';
+const urls = STOCKVPS_URLS.split(';');
 
-let fsProxyUrl = FLARESOLVERR_PROXY || WHMCS_PROXY;
+let fsProxyUrl = STOCKVPS_FS_PROXY || STOCKVPS_PROXY;
 if (fsProxyUrl && !fsProxyUrl.includes('://')) {
   fsProxyUrl = `http://${fsProxyUrl}`;
 }
 
-let proxyUrl = WHMCS_PROXY;
+let proxyUrl = STOCKVPS_PROXY;
 if (proxyUrl && !proxyUrl.includes('://')) {
   proxyUrl = `http://${proxyUrl}`;
 }
@@ -72,7 +72,7 @@ console.log('当前版本: ' + version);
 console.log('StockVPS 频道: https://t.me/stock_vps\n');
 
 client
-  .fetch(`${WHMCS_API}/api/script/version`)
+  .fetch(`${STOCKVPS_API}/api/script/version`)
   .then((res) => res.json())
   .then((data) => {
     if (data.version === version) {
@@ -104,10 +104,10 @@ function main() {
     notifyStatus[url] = true;
     console.log(`[获取到 ${validUrls.length} 个地址] 开始监控第 ${index + 1} 个地址`);
     checkStock(url, index + 1);
-    setInterval(() => checkStock(url, index + 1), WHMCS_INTERVAL * 1000);
+    setInterval(() => checkStock(url, index + 1), STOCKVPS_INTERVAL * 1000);
   });
 
-  client.fetch(`${WHMCS_API}/api/script/logs`, {
+  client.fetch(`${STOCKVPS_API}/api/script/logs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ urls: validUrls }),
@@ -153,7 +153,7 @@ async function fetchViaFlareSolverr(targetUrl, cookies = []) {
     requestBody.proxy = { url: fsProxyUrl };
   }
 
-  const response = await fetch(FLARESOLVERR_URL, {
+  const response = await fetch(STOCKVPS_FS_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(requestBody),
@@ -202,8 +202,8 @@ async function checkStock(url, index) {
     });
     statusCode = response.status;
     
-    if (statusCode === 403 && FLARESOLVERR_URL) {
-      if (WHMCS_LOGS) console.log(`${time()} 监控 ${index} [${statusCode}] 通过 FlareSolverr 访问...`);
+    if (statusCode === 403 && STOCKVPS_FS_URL) {
+      if (STOCKVPS_LOGS) console.log(`${time()} 监控 ${index} [${statusCode}] 通过 FlareSolverr 访问...`);
       const result = await fetchViaFlareSolverr(url);
       html = result.html;
       finalUrl = result.finalUrl;
@@ -273,7 +273,7 @@ async function checkStock(url, index) {
     }
 
     if (statusCode >= 400) {
-      if (WHMCS_LOGS) console.log(`${time()} 监控 ${index} 请求失败，状态码: ${statusCode}`);
+      if (STOCKVPS_LOGS) console.log(`${time()} 监控 ${index} 请求失败，状态码: ${statusCode}`);
       return;
     }
 
@@ -283,7 +283,7 @@ async function checkStock(url, index) {
     const isConfPage = finalUrl.includes('a=confproduct') || finalUrl.includes('a=view');
 
     if (isConfPage) {
-      if (WHMCS_LOGS) console.log(`${time()} 监控 ${index} 有货`);
+      if (STOCKVPS_LOGS) console.log(`${time()} 监控 ${index} 有货`);
       if (notifyStatus[url]) {
         if (url.includes('bwh') || url.includes('bandwagon')) {
           sendNotify(...(await bwhTemplate($, url)));
@@ -298,10 +298,10 @@ async function checkStock(url, index) {
         notifyStatus[url] = false;
       }
     } else if (isOutOfStock) {
-      if (WHMCS_LOGS) console.log(`${time()} 监控 ${index} 无货`);
+      if (STOCKVPS_LOGS) console.log(`${time()} 监控 ${index} 无货`);
       notifyStatus[url] = true;
     } else {
-      if (WHMCS_LOGS) console.log(`${time()} 监控 ${index} 未上架`);
+      if (STOCKVPS_LOGS) console.log(`${time()} 监控 ${index} 未上架`);
     }
   } catch (error) {
     console.error('检查库存时出错:', error);
@@ -361,7 +361,7 @@ async function notifyTemplate(title, url, billing, detail) {
   let link = url;
 
   try {
-    const response = await client.fetch(`${WHMCS_API}/api/script/url`, {
+    const response = await client.fetch(`${STOCKVPS_API}/api/script/url`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),

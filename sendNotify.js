@@ -38,118 +38,117 @@ const httpClient = {
 };
 
 const push_config = {
-  HITOKOTO: true, // 启用一言（随机句子）
+  HITOKOTO: false, 
 
-  BARK_PUSH: '', // bark IP 或设备码，例：https://api.day.app/DxHcxxxxxRxxxxxxcm/
-  BARK_ARCHIVE: '', // bark 推送是否存档
-  BARK_GROUP: '', // bark 推送分组
-  BARK_SOUND: '', // bark 推送声音
-  BARK_ICON: '', // bark 推送图标
-  BARK_LEVEL: '', // bark 推送时效性
-  BARK_URL: '', // bark 推送跳转URL
+  BARK_PUSH: '', 
+  BARK_ARCHIVE: '', 
+  BARK_GROUP: '', 
+  BARK_SOUND: '', 
+  BARK_ICON: '', 
+  BARK_LEVEL: '', 
+  BARK_URL: '', 
 
-  DD_BOT_SECRET: '', // 钉钉机器人的 DD_BOT_SECRET
-  DD_BOT_TOKEN: '', // 钉钉机器人的 DD_BOT_TOKEN
+  DD_BOT_SECRET: '', 
+  DD_BOT_TOKEN: '', 
 
-  FSKEY: '', // 飞书机器人的 FSKEY
+  FSKEY: '', 
+  FSSECRET: '', 
 
-  // 推送到个人QQ：http://127.0.0.1/send_private_msg
-  // 群：http://127.0.0.1/send_group_msg
-  GOBOT_URL: '', // go-cqhttp
-  // 推送到个人QQ 填入 user_id=个人QQ
-  // 群 填入 group_id=QQ群
-  GOBOT_QQ: '', // go-cqhttp 的推送群或用户
-  GOBOT_TOKEN: '', // go-cqhttp 的 access_token
+  
+  
+  GOBOT_URL: '', 
+  
+  
+  GOBOT_QQ: '', 
+  GOBOT_TOKEN: '', 
 
-  GOTIFY_URL: '', // gotify地址,如https://push.example.de:8080
-  GOTIFY_TOKEN: '', // gotify的消息应用token
-  GOTIFY_PRIORITY: 0, // 推送消息优先级,默认为0
+  GOTIFY_URL: '', 
+  GOTIFY_TOKEN: '', 
+  GOTIFY_PRIORITY: 0, 
 
-  IGOT_PUSH_KEY: '', // iGot 聚合推送的 IGOT_PUSH_KEY，例如：https://push.hellyw.com/XXXXXXXX
+  IGOT_PUSH_KEY: '', 
 
-  PUSH_KEY: '', // server 酱的 PUSH_KEY，兼容旧版与 Turbo 版
+  PUSH_KEY: '', 
 
-  DEER_KEY: '', // PushDeer 的 PUSHDEER_KEY
-  DEER_URL: '', // PushDeer 的 PUSHDEER_URL
+  DEER_KEY: '', 
+  DEER_URL: '', 
 
-  CHAT_URL: '', // synology chat url
-  CHAT_TOKEN: '', // synology chat token
+  CHAT_URL: '', 
+  CHAT_TOKEN: '', 
 
-  // 官方文档：https://www.pushplus.plus/
-  PUSH_PLUS_TOKEN: '', // pushplus 推送的用户令牌
-  PUSH_PLUS_USER: '', // pushplus 推送的群组编码
-  PUSH_PLUS_TEMPLATE: 'html', // pushplus 发送模板，支持html,txt,json,markdown,cloudMonitor,jenkins,route,pay
-  PUSH_PLUS_CHANNEL: 'wechat', // pushplus 发送渠道，支持wechat,webhook,cp,mail,sms
-  PUSH_PLUS_WEBHOOK: '', // pushplus webhook编码，可在pushplus公众号上扩展配置出更多渠道
-  PUSH_PLUS_CALLBACKURL: '', // pushplus 发送结果回调地址，会把推送最终结果通知到这个地址上
-  PUSH_PLUS_TO: '', // pushplus 好友令牌，微信公众号渠道填写好友令牌，企业微信渠道填写企业微信用户id
+  
+  PUSH_PLUS_TOKEN: '', 
+  PUSH_PLUS_USER: '', 
+  PUSH_PLUS_TEMPLATE: 'html', 
+  PUSH_PLUS_CHANNEL: 'wechat', 
+  PUSH_PLUS_WEBHOOK: '', 
+  PUSH_PLUS_CALLBACKURL: '', 
+  PUSH_PLUS_TO: '', 
 
-  // 微加机器人，官方网站：https://www.weplusbot.com/
-  WE_PLUS_BOT_TOKEN: '', // 微加机器人的用户令牌
-  WE_PLUS_BOT_RECEIVER: '', // 微加机器人的消息接收人
-  WE_PLUS_BOT_VERSION: 'pro', //微加机器人调用版本，pro和personal；为空默认使用pro(专业版)，个人版填写：personal
+  
+  WE_PLUS_BOT_TOKEN: '', 
+  WE_PLUS_BOT_RECEIVER: '', 
+  WE_PLUS_BOT_VERSION: 'pro', 
 
-  QMSG_KEY: '', // qmsg 酱的 QMSG_KEY
-  QMSG_TYPE: '', // qmsg 酱的 QMSG_TYPE
+  QMSG_KEY: '', 
+  QMSG_TYPE: '', 
 
-  QYWX_ORIGIN: 'https://qyapi.weixin.qq.com', // 企业微信代理地址
+  QYWX_ORIGIN: 'https://qyapi.weixin.qq.com', 
 
-  /*
-    此处填你企业微信应用消息的值(详见文档 https://work.weixin.qq.com/api/doc/90000/90135/90236)
-    环境变量名 QYWX_AM依次填入 corpid,corpsecret,touser(注:多个成员ID使用|隔开),agentid,消息类型(选填,不填默认文本消息类型)
-    注意用,号隔开(英文输入法的逗号)，例如：wwcff56746d9adwers,B-791548lnzXBE6_BWfxdf3kSTMJr9vFEPKAbh6WERQ,mingcheng,1000001,2COXgjH2UIfERF2zxrtUOKgQ9XklUqMdGSWLBoW_lSDAdafat
-    可选推送消息类型(推荐使用图文消息（mpnews）):
-    - 文本卡片消息: 0 (数字零)
-    - 文本消息: 1 (数字一)
-    - 图文消息（mpnews）: 素材库图片id, 可查看此教程(http://note.youdao.com/s/HMiudGkb)或者(https://note.youdao.com/ynoteshare1/index.html?id=1a0c8aff284ad28cbd011b29b3ad0191&type=note)
-  */
-  QYWX_AM: '', // 企业微信应用
+  
+  QYWX_AM: '', 
 
-  QYWX_KEY: '', // 企业微信机器人的 webhook(详见文档 https://work.weixin.qq.com/api/doc/90000/90136/91770)，例如：693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa
+  QYWX_KEY: '', 
 
-  TG_BOT_TOKEN: '', // tg 机器人的 TG_BOT_TOKEN，例：1407203283:AAG9rt-6RDaaX0HBLZQq0laNOh898iFYaRQ
-  TG_USER_ID: '', // tg 机器人的 TG_USER_ID，例：1434078534
-  TG_API_HOST: 'https://api.telegram.org', // tg 代理 api
-  TG_PROXY_AUTH: '', // tg 代理认证参数
-  TG_PROXY_HOST: '', // tg 机器人的 TG_PROXY_HOST
-  TG_PROXY_PORT: '', // tg 机器人的 TG_PROXY_PORT
+  TG_BOT_TOKEN: '', 
+  TG_USER_ID: '', 
+  TG_API_HOST: 'https://api.telegram.org', 
+  TG_PROXY_AUTH: '', 
+  TG_PROXY_HOST: '', 
+  TG_PROXY_PORT: '', 
 
-  AIBOTK_KEY: '', // 智能微秘书 个人中心的apikey 文档地址：http://wechat.aibotk.com/docs/about
-  AIBOTK_TYPE: '', // 智能微秘书 发送目标 room 或 contact
-  AIBOTK_NAME: '', // 智能微秘书  发送群名 或者好友昵称和type要对应好
+  AIBOTK_KEY: '', 
+  AIBOTK_TYPE: '', 
+  AIBOTK_NAME: '', 
 
-  SMTP_SERVICE: '', // 邮箱服务名称，比如 126、163、Gmail、QQ 等，支持列表 https://github.com/nodemailer/nodemailer/blob/master/lib/well-known/services.json
-  SMTP_EMAIL: '', // SMTP 发件邮箱
-  SMTP_TO: '', // SMTP 收件邮箱，默认通知将会发给发件邮箱
-  SMTP_PASSWORD: '', // SMTP 登录密码，也可能为特殊口令，视具体邮件服务商说明而定
-  SMTP_NAME: '', // SMTP 收发件人姓名，可随意填写
+  SMTP_SERVICE: '', 
+  SMTP_EMAIL: '', 
+  SMTP_TO: '', 
+  SMTP_EMAIL_TO: '', 
+  SMTP_PASSWORD: '', 
+  SMTP_NAME: '', 
 
-  PUSHME_KEY: '', // 官方文档：https://push.i-i.me，PushMe 酱的 PUSHME_KEY
+  PUSHME_KEY: '', 
 
-  // CHRONOCAT API https://chronocat.vercel.app/install/docker/official/
-  CHRONOCAT_QQ: '', // 个人: user_id=个人QQ 群则填入 group_id=QQ群 多个用英文;隔开同时支持个人和群
-  CHRONOCAT_TOKEN: '', // 填写在CHRONOCAT文件生成的访问密钥
-  CHRONOCAT_URL: '', // Red 协议连接地址 例： http://127.0.0.1:16530
+  
+  CHRONOCAT_QQ: '', 
+  CHRONOCAT_TOKEN: '', 
+  CHRONOCAT_URL: '', 
 
-  WEBHOOK_URL: '', // 自定义通知 请求地址
-  WEBHOOK_BODY: '', // 自定义通知 请求体
-  WEBHOOK_HEADERS: '', // 自定义通知 请求头
-  WEBHOOK_METHOD: '', // 自定义通知 请求方法
-  WEBHOOK_CONTENT_TYPE: '', // 自定义通知 content-type
+  WEBHOOK_URL: '', 
+  WEBHOOK_BODY: '', 
+  WEBHOOK_HEADERS: '', 
+  WEBHOOK_METHOD: '', 
+  WEBHOOK_CONTENT_TYPE: '', 
 
-  NTFY_URL: '', // ntfy地址,如https://ntfy.sh,默认为https://ntfy.sh
-  NTFY_TOPIC: '', // ntfy的消息应用topic
-  NTFY_PRIORITY: '3', // 推送消息优先级,默认为3
-  NTFY_TOKEN: '', // 推送token,可选
-  NTFY_USERNAME: '', // 推送用户名称,可选
-  NTFY_PASSWORD: '', // 推送用户密码,可选
-  NTFY_ACTIONS: '', // 推送用户动作,可选
+  NTFY_URL: '', 
+  NTFY_TOPIC: '', 
+  NTFY_PRIORITY: '3', 
+  NTFY_TOKEN: '', 
+  NTFY_USERNAME: '', 
+  NTFY_PASSWORD: '', 
+  NTFY_ACTIONS: '', 
 
-  // 官方文档: https://wxpusher.zjiecode.com/docs/
-  // 管理后台: https://wxpusher.zjiecode.com/admin/
-  WXPUSHER_APP_TOKEN: '', // wxpusher 的 appToken
-  WXPUSHER_TOPIC_IDS: '', // wxpusher 的 主题ID，多个用英文分号;分隔 topic_ids 与 uids 至少配置一个才行
-  WXPUSHER_UIDS: '', // wxpusher 的 用户ID，多个用英文分号;分隔 topic_ids 与 uids 至少配置一个才行
+  
+  
+  WXPUSHER_APP_TOKEN: '', 
+  WXPUSHER_TOPIC_IDS: '', 
+  WXPUSHER_UIDS: '', 
+
+  
+  OPENILINK_APP_TOKEN: '', 
+  OPENILINK_HUB_URL: '', 
+  OPENILINK_CONTEXT_TOKEN: '', 
 };
 
 for (const key in push_config) {
@@ -277,7 +276,7 @@ function serverNotify(text, desp) {
   return new Promise((resolve) => {
     const { PUSH_KEY } = push_config;
     if (PUSH_KEY) {
-      // 微信server酱推送通知一个\n不会换行，需要两个\n才能换行，故做此替换
+      
       desp = desp.replace(/[\n\r]/g, '\n\n');
 
       const matchResult = PUSH_KEY.match(/^sctp(\d+)t/i);
@@ -299,11 +298,11 @@ function serverNotify(text, desp) {
           if (err) {
             console.log('Server 酱发送通知调用API失败😞\n', err);
           } else {
-            // server酱和Server酱·Turbo版的返回json格式不太一样
-            if (data.errno === 0 || data.data.errno === 0) {
+            
+            if (data.errno === 0 || data.code === 0) {
               console.log('Server 酱发送通知消息成功🎉\n');
             } else if (data.errno === 1024) {
-              // 一分钟内发送相同的内容会触发
+              
               console.log(`Server 酱发送通知消息异常 ${data.errmsg}\n`);
             } else {
               console.log(`Server 酱发送通知消息异常 ${JSON.stringify(data)}`);
@@ -325,7 +324,7 @@ function pushDeerNotify(text, desp) {
   return new Promise((resolve) => {
     const { DEER_KEY, DEER_URL } = push_config;
     if (DEER_KEY) {
-      // PushDeer 建议对消息内容进行 urlencode
+      
       desp = encodeURI(desp);
       const options = {
         url: DEER_URL || `https://api2.pushdeer.com/message/push`,
@@ -340,7 +339,7 @@ function pushDeerNotify(text, desp) {
           if (err) {
             console.log('PushDeer 通知调用API失败😞\n', err);
           } else {
-            // 通过返回的result的长度来判断是否成功
+            
             if (
               data.content.result.length !== undefined &&
               data.content.result.length > 0
@@ -368,7 +367,7 @@ function chatNotify(text, desp) {
   return new Promise((resolve) => {
     const { CHAT_URL, CHAT_TOKEN } = push_config;
     if (CHAT_URL && CHAT_TOKEN) {
-      // 对消息内容进行 urlencode
+      
       desp = encodeURI(desp);
       const options = {
         url: `${CHAT_URL}${CHAT_TOKEN}`,
@@ -412,7 +411,7 @@ function barkNotify(text, desp, params = {}) {
       BARK_URL,
     } = push_config;
     if (BARK_PUSH) {
-      // 兼容BARK本地用户只填写设备码的情况
+      
       if (!BARK_PUSH.startsWith('http')) {
         BARK_PUSH = `https://api.day.app/${BARK_PUSH}`;
       }
@@ -481,9 +480,13 @@ function tgBotNotify(text, desp) {
         timeout,
       };
       if (TG_PROXY_HOST && TG_PROXY_PORT) {
+        let proxyHost = TG_PROXY_HOST;
+        if (TG_PROXY_AUTH && !TG_PROXY_HOST.includes('@')) {
+          proxyHost = `${TG_PROXY_AUTH}@${TG_PROXY_HOST}`;
+        }
         let agent;
         agent = new ProxyAgent({
-          uri: `http://${TG_PROXY_AUTH}${TG_PROXY_HOST}:${TG_PROXY_PORT}`,
+          uri: `http://${proxyHost}:${TG_PROXY_PORT}`,
         });
         options.dispatcher = agent;
       }
@@ -709,7 +712,7 @@ function do_qywxamNotify(text, desp) {
             };
         }
         if (!QYWX_AM_AY[4]) {
-          // 如不提供第四个参数,则默认进行文本消息类型推送
+          
           options = {
             msgtype: 'text',
             text: {
@@ -769,7 +772,7 @@ function iGotNotify(text, desp, params = {}) {
   return new Promise((resolve) => {
     const { IGOT_PUSH_KEY } = push_config;
     if (IGOT_PUSH_KEY) {
-      // 校验传入的IGOT_PUSH_KEY是否有效
+      
       const IGOT_PUSH_KEY_REGX = new RegExp('^[a-zA-Z0-9]{24}$');
       if (!IGOT_PUSH_KEY_REGX.test(IGOT_PUSH_KEY)) {
         console.log('您所提供的 IGOT_PUSH_KEY 无效\n');
@@ -819,7 +822,7 @@ function pushPlusNotify(text, desp) {
       PUSH_PLUS_TO,
     } = push_config;
     if (PUSH_PLUS_TOKEN) {
-      desp = desp.replace(/[\n\r]/g, '<br>'); // 默认为html, 不支持plaintext
+      desp = desp.replace(/[\n\r]/g, '<br>'); 
       const body = {
         token: `${PUSH_PLUS_TOKEN}`,
         title: `${text}`,
@@ -989,11 +992,29 @@ function aibotkNotify(text, desp) {
 
 function fsBotNotify(text, desp) {
   return new Promise((resolve) => {
-    const { FSKEY } = push_config;
+    const { FSKEY, FSSECRET } = push_config;
     if (FSKEY) {
+      const body = {
+        msg_type: 'text',
+        content: { text: `${text}\n\n${desp}` },
+      };
+
+      
+      
+      
+      if (FSSECRET) {
+        const crypto = require('crypto');
+        const timestamp = Math.floor(Date.now() / 1000).toString();
+        const stringToSign = `${timestamp}\n${FSSECRET}`;
+        const hmac = crypto.createHmac('sha256', stringToSign);
+        const sign = hmac.digest('base64');
+        body.timestamp = timestamp;
+        body.sign = sign;
+      }
+
       const options = {
         url: `https://open.feishu.cn/open-apis/bot/v2/hook/${FSKEY}`,
-        json: { msg_type: 'text', content: { text: `${text}\n\n${desp}` } },
+        json: body,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -1023,8 +1044,14 @@ function fsBotNotify(text, desp) {
 }
 
 async function smtpNotify(text, desp) {
-  const { SMTP_EMAIL, SMTP_TO, SMTP_PASSWORD, SMTP_SERVICE, SMTP_NAME } =
-    push_config;
+  const {
+    SMTP_EMAIL,
+    SMTP_TO,
+    SMTP_EMAIL_TO,
+    SMTP_PASSWORD,
+    SMTP_SERVICE,
+    SMTP_NAME,
+  } = push_config;
   if (![SMTP_EMAIL, SMTP_PASSWORD].every(Boolean) || !SMTP_SERVICE) {
     return;
   }
@@ -1040,9 +1067,20 @@ async function smtpNotify(text, desp) {
     });
 
     const addr = SMTP_NAME ? `"${SMTP_NAME}" <${SMTP_EMAIL}>` : SMTP_EMAIL;
+    const recipients = [SMTP_EMAIL_TO, SMTP_TO].reduce((list, value) => {
+      if (!value) {
+        return list;
+      }
+      return list.concat(
+        value
+          .split(/[;；]/)
+          .map((item) => item.trim())
+          .filter(Boolean),
+      );
+    }, []);
     const info = await transporter.sendMail({
       from: addr,
-      to: SMTP_TO ? SMTP_TO.split(';') : addr,
+      to: recipients.length ? recipients : SMTP_EMAIL,
       subject: text,
       html: `${desp.replace(/\n/g, '<br/>')}`,
     });
@@ -1262,7 +1300,15 @@ function ntfyNotify(text, desp) {
   }
 
   return new Promise((resolve) => {
-    const { NTFY_URL, NTFY_TOPIC, NTFY_PRIORITY, NTFY_TOKEN, NTFY_USERNAME, NTFY_PASSWORD, NTFY_ACTIONS } = push_config;
+    const {
+      NTFY_URL,
+      NTFY_TOPIC,
+      NTFY_PRIORITY,
+      NTFY_TOKEN,
+      NTFY_USERNAME,
+      NTFY_PASSWORD,
+      NTFY_ACTIONS,
+    } = push_config;
     if (NTFY_TOPIC) {
       const options = {
         url: `${NTFY_URL || 'https://ntfy.sh'}/${NTFY_TOPIC}`,
@@ -1277,7 +1323,8 @@ function ntfyNotify(text, desp) {
       if (NTFY_TOKEN) {
         options.headers['Authorization'] = `Bearer ${NTFY_TOKEN}`;
       } else if (NTFY_USERNAME && NTFY_PASSWORD) {
-        options.headers['Authorization'] = `Basic ${Buffer.from(`${NTFY_USERNAME}:${NTFY_PASSWORD}`).toString('base64')}`;
+        options.headers['Authorization'] =
+          `Basic ${Buffer.from(`${NTFY_USERNAME}:${NTFY_PASSWORD}`).toString('base64')}`;
       }
       if (NTFY_ACTIONS) {
         options.headers['Actions'] = encodeRFC2047(NTFY_ACTIONS);
@@ -1311,7 +1358,7 @@ function wxPusherNotify(text, desp) {
     const { WXPUSHER_APP_TOKEN, WXPUSHER_TOPIC_IDS, WXPUSHER_UIDS } =
       push_config;
     if (WXPUSHER_APP_TOKEN) {
-      // 处理topic_ids，将分号分隔的字符串转为数组
+      
       const topicIds = WXPUSHER_TOPIC_IDS
         ? WXPUSHER_TOPIC_IDS.split(';')
             .map((id) => id.trim())
@@ -1319,14 +1366,14 @@ function wxPusherNotify(text, desp) {
             .map((id) => parseInt(id))
         : [];
 
-      // 处理uids，将分号分隔的字符串转为数组
+      
       const uids = WXPUSHER_UIDS
         ? WXPUSHER_UIDS.split(';')
             .map((uid) => uid.trim())
             .filter((uid) => uid)
         : [];
 
-      // topic_ids uids 至少有一个
+      
       if (!topicIds.length && !uids.length) {
         console.log(
           'wxpusher 服务的 WXPUSHER_TOPIC_IDS 和 WXPUSHER_UIDS 至少设置一个!!',
@@ -1362,6 +1409,54 @@ function wxPusherNotify(text, desp) {
               console.log('wxpusher发送通知消息完成！');
             } else {
               console.log(`wxpusher发送通知消息异常：${data.msg}`);
+            }
+          }
+        } catch (e) {
+          $.logErr(e, resp);
+        } finally {
+          resolve(data);
+        }
+      });
+    } else {
+      resolve();
+    }
+  });
+}
+
+function openiLinkNotify(text, desp) {
+  return new Promise((resolve) => {
+    const { OPENILINK_APP_TOKEN, OPENILINK_HUB_URL, OPENILINK_CONTEXT_TOKEN } =
+      push_config;
+    if (OPENILINK_APP_TOKEN) {
+      const baseUrl = OPENILINK_HUB_URL
+        ? OPENILINK_HUB_URL.replace(/\/$/, '')
+        : 'https://hub.openilink.com';
+      const body = {
+        type: 'text',
+        content: `${text}\n\n${desp}`,
+      };
+      if (OPENILINK_CONTEXT_TOKEN) {
+        body.context_token = OPENILINK_CONTEXT_TOKEN;
+      }
+      const options = {
+        url: `${baseUrl}/bot/v1/message/send`,
+        body: JSON.stringify(body),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${OPENILINK_APP_TOKEN}`,
+        },
+        timeout,
+      };
+
+      $.post(options, (err, resp, data) => {
+        try {
+          if (err) {
+            console.log('OpeniLink 发送通知消息失败！\n', err);
+          } else {
+            if (data.ok) {
+              console.log('OpeniLink 发送通知消息成功！');
+            } else {
+              console.log(`OpeniLink 发送通知消息异常：${data.error}`);
             }
           }
         } catch (e) {
@@ -1462,15 +1557,9 @@ function formatBodyFun(contentType, body) {
   return {};
 }
 
-/**
- * sendNotify 推送通知功能
- * @param text 通知头
- * @param desp 通知体
- * @param params 某些推送通知方式点击弹窗可跳转, 例：{ url: 'https://abc.com' }
- * @returns {Promise<unknown>}
- */
+
 async function sendNotify(text, desp, params = {}) {
-  // 根据标题跳过一些消息推送，环境变量：SKIP_PUSH_TITLE 用回车分隔
+  
   let skipTitle = process.env.SKIP_PUSH_TITLE;
   if (skipTitle) {
     if (skipTitle.split('\n').includes(text)) {
@@ -1479,33 +1568,34 @@ async function sendNotify(text, desp, params = {}) {
     }
   }
 
-  if (push_config.HITOKOTO !== 'false') {
+  if (![false, 'false'].includes(push_config.HITOKOTO)) {
     desp += '\n\n' + (await one());
   }
 
   await Promise.all([
-    serverNotify(text, desp), // 微信server酱
-    pushPlusNotify(text, desp), // pushplus
-    wePlusBotNotify(text, desp), // 微加机器人
-    barkNotify(text, desp, params), // iOS Bark APP
-    tgBotNotify(text, desp), // telegram 机器人
-    ddBotNotify(text, desp), // 钉钉机器人
-    qywxBotNotify(text, desp), // 企业微信机器人
-    qywxamNotify(text, desp), // 企业微信应用消息推送
-    iGotNotify(text, desp, params), // iGot
-    gobotNotify(text, desp), // go-cqhttp
-    gotifyNotify(text, desp), // gotify
-    chatNotify(text, desp), // synolog chat
-    pushDeerNotify(text, desp), // PushDeer
-    aibotkNotify(text, desp), // 智能微秘书
-    fsBotNotify(text, desp), // 飞书机器人
-    smtpNotify(text, desp), // SMTP 邮件
-    pushMeNotify(text, desp, params), // PushMe
-    chronocatNotify(text, desp), // Chronocat
-    webhookNotify(text, desp), // 自定义通知
-    qmsgNotify(text, desp), // 自定义通知
-    ntfyNotify(text, desp), // Ntfy
-    wxPusherNotify(text, desp), // wxpusher
+    serverNotify(text, desp), 
+    pushPlusNotify(text, desp), 
+    wePlusBotNotify(text, desp), 
+    barkNotify(text, desp, params), 
+    tgBotNotify(text, desp), 
+    ddBotNotify(text, desp), 
+    qywxBotNotify(text, desp), 
+    qywxamNotify(text, desp), 
+    iGotNotify(text, desp, params), 
+    gobotNotify(text, desp), 
+    gotifyNotify(text, desp), 
+    chatNotify(text, desp), 
+    pushDeerNotify(text, desp), 
+    aibotkNotify(text, desp), 
+    fsBotNotify(text, desp), 
+    smtpNotify(text, desp), 
+    pushMeNotify(text, desp, params), 
+    chronocatNotify(text, desp), 
+    webhookNotify(text, desp), 
+    qmsgNotify(text, desp), 
+    ntfyNotify(text, desp), 
+    wxPusherNotify(text, desp), 
+    openiLinkNotify(text, desp), 
   ]);
 }
 
