@@ -19,8 +19,14 @@ const WHMCS_INTERVAL = process.env.WHMCS_INTERVAL || 60;
 const WHMCS_LOGS = process.env.WHMCS_LOGS || true;
 const WHMCS_API = 'https://vps.tsx.dpdns.org';
 const WHMCS_PROXY = process.env.WHMCS_PROXY || '';
+const FLARESOLVERR_PROXY = process.env.FLARESOLVERR_PROXY || '';
 const FLARESOLVERR_URL = process.env.FLARESOLVERR_URL || '';
 const urls = WHMCS_URLS.split(';');
+
+let fsProxyUrl = FLARESOLVERR_PROXY || WHMCS_PROXY;
+if (fsProxyUrl && !fsProxyUrl.includes('://')) {
+  fsProxyUrl = `http://${fsProxyUrl}`;
+}
 
 let proxyUrl = WHMCS_PROXY;
 if (proxyUrl && !proxyUrl.includes('://')) {
@@ -63,8 +69,7 @@ const OUT_OF_STOCK_KEYWORDS = [
 ];
 
 console.log('当前版本: ' + version);
-console.log('VPS 补货通知: https://t.me/vps_restock');
-console.log('脚本最新动态: https://t.me/stock_vps\n');
+console.log('StockVPS 频道: https://t.me/stock_vps\n');
 
 client
   .fetch(`${WHMCS_API}/api/script/version`)
@@ -109,6 +114,33 @@ function main() {
   }).catch(() => {});
 }
 
+const cfCache = {};
+
+function formatCookieString(cookiesArray) {
+  if (!cookiesArray || cookiesArray.length === 0) return '';
+  return cookiesArray.map(c => `${c.name}=${c.value}`).join('; ');
+}
+
+function mergeCookies(oldCookies, setCookieHeader) {
+  if (!setCookieHeader) return oldCookies;
+  const cookieMap = new Map(oldCookies.map(c => [c.name, c.value]));
+  
+  const cookiesList = setCookieHeader.split(/,(?=\s*[a-zA-Z0-9_\-]+[=])/);
+  for (const cookieStr of cookiesList) {
+    const parts = cookieStr.split(';');
+    const mainPart = parts[0].trim();
+    const eqIndex = mainPart.indexOf('=');
+    if (eqIndex > 0) {
+      const name = mainPart.slice(0, eqIndex).trim();
+      const value = mainPart.slice(eqIndex + 1).trim();
+      if (name && value) {
+        cookieMap.set(name, value);
+      }
+    }
+  }
+  return Array.from(cookieMap.entries()).map(([name, value]) => ({ name, value }));
+}
+
 async function fetchViaFlareSolverr(targetUrl, cookies = []) {
   const requestBody = {
     cmd: 'request.get',
@@ -117,8 +149,8 @@ async function fetchViaFlareSolverr(targetUrl, cookies = []) {
     maxTimeout: 60000,
   };
   
-  if (proxyUrl) {
-    requestBody.proxy = { url: proxyUrl };
+  if (fsProxyUrl) {
+    requestBody.proxy = { url: fsProxyUrl };
   }
 
   const response = await fetch(FLARESOLVERR_URL, {
@@ -136,49 +168,75 @@ async function fetchViaFlareSolverr(targetUrl, cookies = []) {
     finalUrl: data.solution.url,
     statusCode: data.solution.status,
     cookies: data.solution.cookies,
+    userAgent: data.solution.userAgent || '',
   };
 }
 
 async function checkStock(url, index) {
   try {
+    const urlObj = new URL(url);
+    const host = urlObj.host;
+
     let html;
     let finalUrl = url;
     let statusCode;
-    let cookies;
+    let cookies = [];
+    let userAgent = '';
 
-    if (FLARESOLVERR_URL) {
-      if (WHMCS_LOGS) console.log(`${time()} 监控 ${index} 使用 FlareSolverr 请求中...`);
+    const cache = cfCache[host];
+    const hasCache = cache && cache.cookies && cache.cookies.length > 0 && cache.userAgent;
+
+    let usedFlareSolverr = false;
+
+    const reqHeaders = {};
+    if (hasCache) {
+      reqHeaders['Cookie'] = formatCookieString(cache.cookies);
+      reqHeaders['User-Agent'] = cache.userAgent;
+      cookies = cache.cookies;
+      userAgent = cache.userAgent;
+    }
+
+    const response = await client.fetch(url, { 
+      redirect: 'manual',
+      headers: reqHeaders,
+    });
+    statusCode = response.status;
+    
+    if (statusCode === 403 && FLARESOLVERR_URL) {
+      if (WHMCS_LOGS) console.log(`${time()} 监控 ${index} [${statusCode}] 通过 FlareSolverr 访问...`);
       const result = await fetchViaFlareSolverr(url);
       html = result.html;
       finalUrl = result.finalUrl;
       statusCode = result.statusCode;
       cookies = result.cookies;
+      userAgent = result.userAgent;
+      usedFlareSolverr = true;
+
+      // 存入内存缓存
+      cfCache[host] = { cookies, userAgent };
     } else {
-      const response = await client.fetch(url, { redirect: 'manual' });
-      statusCode = response.status;
-      let cookieStr = response.headers.get('set-cookie') || '';
+      let setCookieHeader = response.headers.get('set-cookie') || '';
+      cookies = mergeCookies(cookies, setCookieHeader);
       const location = response.headers.get('location');
 
+      // 直连成功或正常进行 3xx 跳转
       if (statusCode >= 300 && statusCode < 400 && location) {
-        // 第一次重定向
         const targetLocation = new URL(location, url).toString();
-        
         const redirectResponse = await client.fetch(targetLocation, {
-          headers: { Cookie: cookieStr },
+          headers: {
+            'Cookie': formatCookieString(cookies),
+            ...(userAgent ? { 'User-Agent': userAgent } : {}),
+          },
         });
         statusCode = redirectResponse.status;
-        const redirectCookies = redirectResponse.headers.get('set-cookie');
-        if (redirectCookies) {
-          cookieStr = redirectCookies;
-        }
+        const redirectSetCookie = redirectResponse.headers.get('set-cookie');
+        cookies = mergeCookies(cookies, redirectSetCookie);
         html = await redirectResponse.text();
-        // 第二次重定向
         finalUrl = redirectResponse.url || targetLocation;
       } else {
         html = await response.text();
         finalUrl = response.url || url;      
       }
-      cookies = cookieStr;
     }
 
     if (finalUrl.includes('a=view') && statusCode < 400) {
@@ -187,18 +245,29 @@ async function checkStock(url, index) {
       confUrlObj.search = '?a=confproduct&i=0';
       const redirectUrl = confUrlObj.toString();
 
-      if (FLARESOLVERR_URL) {
+      if (usedFlareSolverr) {
         const result = await fetchViaFlareSolverr(redirectUrl, cookies);
         html = result.html;
         finalUrl = result.finalUrl;
         statusCode = result.statusCode;
+        cookies = result.cookies;
+        if (cfCache[host]) {
+          cfCache[host].cookies = cookies;
+        }
       } else {
         const confResponse = await client.fetch(redirectUrl, {
-          headers: { Cookie: cookies },
+          headers: {
+            'Cookie': formatCookieString(cookies),
+            ...(userAgent ? { 'User-Agent': userAgent } : {}),
+          },
         });
         statusCode = confResponse.status;
+        const confSetCookie = confResponse.headers.get('set-cookie');
+        cookies = mergeCookies(cookies, confSetCookie);
+        if (cfCache[host]) {
+          cfCache[host].cookies = cookies;
+        }
         html = await confResponse.text();
-        // 重新请求配置页面后的 URL
         finalUrl = confResponse.url || redirectUrl;
       }
     }
