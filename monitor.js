@@ -20,7 +20,7 @@ const STOCKVPS_LOGS = process.env.STOCKVPS_LOGS || true;
 const STOCKVPS_PROXY = process.env.STOCKVPS_PROXY || '';
 const STOCKVPS_FS_PROXY = process.env.STOCKVPS_FS_PROXY || '';
 const STOCKVPS_FS_URL = process.env.STOCKVPS_FS_URL || '';
-const STOCKVPS_API = 'https://vps.tsx.dpdns.org';
+const STOCKVPS_API = 'https://stockvps.org';
 const urls = STOCKVPS_URLS.split(';');
 
 let fsProxyUrl = STOCKVPS_FS_PROXY || STOCKVPS_PROXY;
@@ -221,27 +221,47 @@ async function checkStock(url, index) {
 
       // 直连成功或正常进行 3xx 跳转
       if (statusCode >= 300 && statusCode < 400 && location) {
-        const targetLocation = new URL(location, url).toString();
-        const redirectResponse = await client.fetch(targetLocation, {
-          headers: {
-            'Cookie': formatCookieString(cookies),
-            ...(userAgent ? { 'User-Agent': userAgent } : {}),
-          },
-        });
-        statusCode = redirectResponse.status;
-        const redirectSetCookie = redirectResponse.headers.get('set-cookie');
-        cookies = mergeCookies(cookies, redirectSetCookie);
-        html = await redirectResponse.text();
-        finalUrl = redirectResponse.url || targetLocation;
+        let currentUrl = new URL(location, url).toString();
+        const maxHops = 5;
+        let hop = 0;
+        let redirectResponse;
+        
+        for (; hop < maxHops; hop++) {
+          redirectResponse = await client.fetch(currentUrl, {
+            redirect: 'manual',
+            headers: {
+              'Cookie': formatCookieString(cookies),
+              ...(userAgent ? { 'User-Agent': userAgent } : {}),
+            },
+          });
+          statusCode = redirectResponse.status;
+          const redirectSetCookie = redirectResponse.headers.get('set-cookie') || '';
+          cookies = mergeCookies(cookies, redirectSetCookie);
+          
+          const nextLocation = redirectResponse.headers.get('location');
+          if (statusCode >= 300 && statusCode < 400 && nextLocation) {
+            currentUrl = new URL(nextLocation, currentUrl).toString();
+          } else {
+            html = await redirectResponse.text();
+            finalUrl = redirectResponse.url || currentUrl;
+            break;
+          }
+        }
+        
+        if (hop === maxHops) {
+          if (STOCKVPS_LOGS) console.log(`${time()} 监控 ${index} 重定向次数过多`);
+          return;
+        }
       } else {
         html = await response.text();
         finalUrl = response.url || url;      
       }
     }
 
+    
     if (finalUrl.includes('a=view') && statusCode < 400) {
       // 检测到 a=view，尝试重新请求配置页面
-      const confUrlObj = new URL(url);
+      const confUrlObj = new URL(finalUrl);
       confUrlObj.search = '?a=confproduct&i=0';
       const redirectUrl = confUrlObj.toString();
 
@@ -324,10 +344,9 @@ async function standardTemplate($, url) {
 async function bwhTemplate($, url) {
   const name = $('title').text().split('-')[0].trim();
   const title = $('.cartbox strong').text().trim();
-  const detailArr = $('.cartbox strong')
-    .parent('.cartbox')
-    .html()
-    .split('<br>')
+  const detailArr = ($('.cartbox strong').parent('.cartbox').html() || '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .split(/<br\s*\/?>/i)
     .map((line) => line.trim())
     .filter((line) => line !== '');
 
