@@ -1,17 +1,18 @@
 /**
- * VPS 库存监控
+ * StockVPS 补货监控
+ * name: StockVPS 补货监控
  * 定时规则
  * cron: @once
  * 环境变量
  * STOCKVPS_URLS 监控商品链接（包含 pid 的链接） 多个连接用英文分号（;）分割
- * STOCKVPS_INTERVAL 监控频率，单位秒，默认为一分钟一次（60）
+ * STOCKVPS_INTERVAL 监控频率，单位秒，默认为 60s
  * STOCKVPS_LOGS 是否打印详细日志
  */
 
 const { URL } = require('url');
 const { Impit } = require('impit');
 const cheerio = require('cheerio');
-const version = '1.0.0';
+const version = '1.1.0';
 const { sendNotify } = require('./sendNotify.js');
 
 const STOCKVPS_URLS = process.env.STOCKVPS_URLS || '';
@@ -21,6 +22,7 @@ const STOCKVPS_PROXY = process.env.STOCKVPS_PROXY || '';
 const STOCKVPS_FS_PROXY = process.env.STOCKVPS_FS_PROXY || '';
 const STOCKVPS_FS_URL = process.env.STOCKVPS_FS_URL || '';
 const STOCKVPS_API = 'https://stockvps.org';
+const LAGOM_DOMAINS = ['colocrossing'];
 const urls = STOCKVPS_URLS.split(';');
 
 let fsProxyUrl = STOCKVPS_FS_PROXY || STOCKVPS_PROXY;
@@ -69,6 +71,7 @@ const OUT_OF_STOCK_KEYWORDS = [
 ];
 
 console.log('当前版本: ' + version);
+console.log('StockVPS 官网: https://stockvps.org');
 console.log('StockVPS 频道: https://t.me/stock_vps\n');
 
 client
@@ -311,6 +314,9 @@ async function checkStock(url, index) {
         } else if (url.includes('dmit')) {
           sendNotify(...(await dmitTemplate($, url)));
           console.log((await dmitTemplate($, url))[1]);
+        } else if (LAGOM_DOMAINS.some((domain) => url.includes(domain))) {
+          sendNotify(...(await lagomTemplate($, url)));
+          console.log((await lagomTemplate($, url))[1]);
         } else {
           sendNotify(...(await standardTemplate($, url)));
           console.log((await standardTemplate($, url))[1]);
@@ -326,6 +332,32 @@ async function checkStock(url, index) {
   } catch (error) {
     console.error('检查库存时出错:', error);
   }
+}
+
+async function lagomTemplate($, url) {
+  const name = $('title').text().split('-')[1]?.trim() || $('title').text().split('-')[0]?.trim();
+  const title = $('h2.gap-2x').text().trim();
+  
+  const detail = ($('.product-info').html() || '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .split(/<br\s*\/?>/i)
+    .map((line) => line.trim())
+    .filter((line) => line !== '')
+    .join('\n');
+
+  const billingArr = [];
+  $('#sectionCycles input[name="billingcycle"]').each((i, input) => {
+    const text = $(input).closest('label').text().replace(/\s+/g, ' ').trim();
+    if (text) billingArr.push(text);
+  });
+  if (billingArr.length === 0) {
+    $('select[name=billingcycle] option').each((i, option) => {
+      billingArr.push($(option).text().replace(/\s+/g, ' ').trim());
+    });
+  }
+  const billing = billingArr.join('\n');
+
+  return [name + ' 补货通知', await notifyTemplate(title, url, billing, detail)];
 }
 
 async function standardTemplate($, url) {
