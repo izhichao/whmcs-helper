@@ -12,7 +12,7 @@
 const { URL } = require('url');
 const { Impit } = require('impit');
 const cheerio = require('cheerio');
-const version = '1.1.0';
+const version = '1.1.1';
 const { sendNotify } = require('./sendNotify.js');
 
 const STOCKVPS_URLS = process.env.STOCKVPS_URLS || '';
@@ -22,7 +22,7 @@ const STOCKVPS_PROXY = process.env.STOCKVPS_PROXY || '';
 const STOCKVPS_FS_PROXY = process.env.STOCKVPS_FS_PROXY || '';
 const STOCKVPS_FS_URL = process.env.STOCKVPS_FS_URL || '';
 const STOCKVPS_API = 'https://stockvps.org';
-const LAGOM_DOMAINS = ['colocrossing'];
+const LAGOM_DOMAINS = ['colocrossing', 'vmiss'];
 const urls = STOCKVPS_URLS.split(';');
 
 let fsProxyUrl = STOCKVPS_FS_PROXY || STOCKVPS_PROXY;
@@ -39,7 +39,7 @@ const notifyStatus = {};
 const client = new Impit({
   browser: 'chrome',
   ignoreTlsErrors: false,
-  ...(proxyUrl ? { proxyUrl } : {}),
+  ...(proxyUrl ? { proxyUrl } : {})
 });
 
 const OUT_OF_STOCK_KEYWORDS = [
@@ -67,7 +67,7 @@ const OUT_OF_STOCK_KEYWORDS = [
   'Loppuunmyyty',
   'Išparduota',
   'Izpirkts',
-  'Otsas',
+  'Otsas'
 ];
 
 console.log('当前版本: ' + version);
@@ -110,24 +110,26 @@ function main() {
     setInterval(() => checkStock(url, index + 1), STOCKVPS_INTERVAL * 1000);
   });
 
-  client.fetch(`${STOCKVPS_API}/api/script/logs`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ urls: validUrls }),
-  }).catch(() => {});
+  client
+    .fetch(`${STOCKVPS_API}/api/script/logs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ urls: validUrls })
+    })
+    .catch(() => {});
 }
 
 const cfCache = {};
 
 function formatCookieString(cookiesArray) {
   if (!cookiesArray || cookiesArray.length === 0) return '';
-  return cookiesArray.map(c => `${c.name}=${c.value}`).join('; ');
+  return cookiesArray.map((c) => `${c.name}=${c.value}`).join('; ');
 }
 
 function mergeCookies(oldCookies, setCookieHeader) {
   if (!setCookieHeader) return oldCookies;
-  const cookieMap = new Map(oldCookies.map(c => [c.name, c.value]));
-  
+  const cookieMap = new Map(oldCookies.map((c) => [c.name, c.value]));
+
   const cookiesList = setCookieHeader.split(/,(?=\s*[a-zA-Z0-9_\-]+[=])/);
   for (const cookieStr of cookiesList) {
     const parts = cookieStr.split(';');
@@ -149,9 +151,9 @@ async function fetchViaFlareSolverr(targetUrl, cookies = []) {
     cmd: 'request.get',
     url: targetUrl,
     cookies: cookies,
-    maxTimeout: 60000,
+    maxTimeout: 60000
   };
-  
+
   if (fsProxyUrl) {
     requestBody.proxy = { url: fsProxyUrl };
   }
@@ -160,7 +162,7 @@ async function fetchViaFlareSolverr(targetUrl, cookies = []) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(requestBody),
-    signal: AbortSignal.timeout(90000),
+    signal: AbortSignal.timeout(90000)
   });
   const data = await response.json();
   if (data.status !== 'ok') {
@@ -171,7 +173,7 @@ async function fetchViaFlareSolverr(targetUrl, cookies = []) {
     finalUrl: data.solution.url,
     statusCode: data.solution.status,
     cookies: data.solution.cookies,
-    userAgent: data.solution.userAgent || '',
+    userAgent: data.solution.userAgent || ''
   };
 }
 
@@ -199,12 +201,12 @@ async function checkStock(url, index) {
       userAgent = cache.userAgent;
     }
 
-    const response = await client.fetch(url, { 
+    const response = await client.fetch(url, {
       redirect: 'manual',
-      headers: reqHeaders,
+      headers: reqHeaders
     });
     statusCode = response.status;
-    
+
     if (statusCode === 403 && STOCKVPS_FS_URL) {
       if (STOCKVPS_LOGS) console.log(`${time()} 监控 ${index} [${statusCode}] 通过 FlareSolverr 访问...`);
       const result = await fetchViaFlareSolverr(url);
@@ -228,19 +230,19 @@ async function checkStock(url, index) {
         const maxHops = 5;
         let hop = 0;
         let redirectResponse;
-        
+
         for (; hop < maxHops; hop++) {
           redirectResponse = await client.fetch(currentUrl, {
             redirect: 'manual',
             headers: {
-              'Cookie': formatCookieString(cookies),
-              ...(userAgent ? { 'User-Agent': userAgent } : {}),
-            },
+              Cookie: formatCookieString(cookies),
+              ...(userAgent ? { 'User-Agent': userAgent } : {})
+            }
           });
           statusCode = redirectResponse.status;
           const redirectSetCookie = redirectResponse.headers.get('set-cookie') || '';
           cookies = mergeCookies(cookies, redirectSetCookie);
-          
+
           const nextLocation = redirectResponse.headers.get('location');
           if (statusCode >= 300 && statusCode < 400 && nextLocation) {
             currentUrl = new URL(nextLocation, currentUrl).toString();
@@ -250,18 +252,17 @@ async function checkStock(url, index) {
             break;
           }
         }
-        
+
         if (hop === maxHops) {
           if (STOCKVPS_LOGS) console.log(`${time()} 监控 ${index} 重定向次数过多`);
           return;
         }
       } else {
         html = await response.text();
-        finalUrl = response.url || url;      
+        finalUrl = response.url || url;
       }
     }
 
-    
     if (finalUrl.includes('a=view') && statusCode < 400) {
       // 检测到 a=view，尝试重新请求配置页面
       const confUrlObj = new URL(finalUrl);
@@ -280,9 +281,9 @@ async function checkStock(url, index) {
       } else {
         const confResponse = await client.fetch(redirectUrl, {
           headers: {
-            'Cookie': formatCookieString(cookies),
-            ...(userAgent ? { 'User-Agent': userAgent } : {}),
-          },
+            Cookie: formatCookieString(cookies),
+            ...(userAgent ? { 'User-Agent': userAgent } : {})
+          }
         });
         statusCode = confResponse.status;
         const confSetCookie = confResponse.headers.get('set-cookie');
@@ -336,8 +337,8 @@ async function checkStock(url, index) {
 
 async function lagomTemplate($, url) {
   const name = $('title').text().split('-')[1]?.trim() || $('title').text().split('-')[0]?.trim();
-  const title = $('h2.gap-2x').text().trim();
-  
+  const title = $('.panel-body h2').text().trim();
+
   const detail = ($('.product-info').html() || '')
     .replace(/<!--[\s\S]*?-->/g, '')
     .split(/<br\s*\/?>/i)
@@ -415,7 +416,7 @@ async function notifyTemplate(title, url, billing, detail) {
     const response = await client.fetch(`${STOCKVPS_API}/api/script/url`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ url })
     });
     const res = await response.json();
 
